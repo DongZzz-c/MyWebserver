@@ -15,6 +15,7 @@ threadpool+log+getrequest
 ### 1.3 原理
 >  **webbench首先fork出多个子进程，每个子进程都循环做web访问测试。子进程把访问的结果通过pipe告诉父进程，父进程做最终的统计结果。**
 ### 1.4 测试结果
+>  **指令：webbench -c 10000 -t 1 http://ip:port/**
 1.10000,1s    
 
 	tp://172.27.170.70:9006/index.html
