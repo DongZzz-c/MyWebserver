@@ -12,7 +12,7 @@ const char* error_500_title = "Internal Error";
 const char* error_500_form = "There was an unusual problem serving the requested file.\n";
 
 // 网站根目录
-const char* doc_root = "/home/dong/gitpro/webserver-newcode/resources";
+const char* doc_root = "/home/dong/jobprog/mywebserver/MyWebserver/resources";
 
 int http_conn::conn_user_count = 0;
 int http_conn::conn_epollfd = -1;
