@@ -1,9 +1,36 @@
-# MyWebserver
-threadpool+log+getrequest
+# 收集学生信息的服务器
+很多时候我们需要大量收集学生的信息，本服务器能实现该需求，学生在自己的浏览器上连接本服务器，注册登录后填写自己的信息，服务器会把学生信息记录在mysql数据库中
+* 通过线程池高并发的处理http请求
+* 基于阻塞队列实现的异步日志系统
+* RAII机制管理的数据库连接池
+* 基于有限状态机方法的GET/POST请求解析
 ## 编译指令
-  g++ config.cpp http_conn.cpp log.cpp web.cpp main.cpp -o server -pthread  
+> make server
 ## 执行
-  ./server
+> ./server
+## 数据库连接
+> sudo apt install mysql-server
+> sudo mysql
+> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
+第一次用创建用户表
+> create table user(
+>     username char(50) NULL,
+>     passwd char(50) NULL
+> );
+> 
+> create table student(
+>     id char(50) NULL,
+>     name char(50) NULL,
+>     gender char(50) NULL,
+>     age char(50) NULL,
+>     school char(50) NULL,
+>     major char(50) NULL,
+>     cellphone char(50) NULL,
+>     email char(50) NULL
+> );
+> 
+> INSERT INTO user(username, passwd) VALUES('name', 'passwd');
+
 ## webbench压测
 ### 1.1 安装依赖 exuberant-ctags  
 	sudo apt-get install exuberant-ctags
