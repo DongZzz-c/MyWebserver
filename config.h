@@ -1,25 +1,27 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <unistd.h>
-#include <cstdlib>
+#include "web.h"
 
 using namespace std;
 
-class Config
-{
+class Config{
 public:
     Config();
     ~Config(){};
 
     void parse_arg(int argc, char*argv[]);
-
-    int cfg_port;           //端口号
-    int cfg_trigmode;       //触发组合模式
-    int cfg_threadnum;      //线程池内的线程数量
-    int cfg_actormodel;     //并发模型选择
-    int cfg_lgclose;        //开启日志
-    int cfg_lgwrite;        //日志写入方式
+    
+    int PORT;           //端口号
+    int LOGWrite;       //日志写入方式
+    int TRIGMode;       //触发组合模式
+    int LISTENTrigmode; //listenfd触发模式
+    int CONNTrigmode;   //connfd触发模式
+    int OPT_LINGER;     //优雅关闭链接
+    int sql_num;        //数据库连接池数量
+    int thread_num;     //线程池内的线程数量
+    int close_log;      //是否关闭日志
+    int actor_model;    //并发模型选择
 };
 
 #endif
