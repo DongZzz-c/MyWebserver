@@ -110,7 +110,7 @@ public:
     static int m_epollfd;
     static int m_user_count;
     MYSQL *mysql;
-    int m_state;  //读为0, 写为1
+    int m_state;
 
 private:
     int m_sockfd;
@@ -133,12 +133,11 @@ private:
     struct stat m_file_stat;
     struct iovec m_iv[2];
     int m_iv_count;
-    int cgi;        //是否启用的POST
-    char *m_string; //存储请求头数据
+    int cgi; 
+    char *m_string; 
     int bytes_to_send;
     int bytes_have_send;
     char *doc_root;
-
     map<string, string> m_users;
     int m_TRIGMode;
     int m_close_log;

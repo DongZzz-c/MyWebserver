@@ -3,7 +3,7 @@
 #include <mysql/mysql.h>
 #include <fstream>
 
-//定义http响应的一些状态信息
+//http响应的状态信息
 const char *ok_200_title = "OK";
 const char *error_400_title = "Bad Request";
 const char *error_400_form = "Your request has bad syntax or is inherently impossible to staisfy.\n";
@@ -20,24 +20,19 @@ locker m_lock;
 map<string, string> users;
 
 void http_conn::initmysql_result(connection_pool *connPool){
-    //先从连接池中取一个连接
+    //从连接池中取一个连接
     MYSQL *mysql = NULL;
     connectionRAII mysqlcon(&mysql, connPool);
-
     //在user表中检索username，passwd数据，浏览器端输入
     if (mysql_query(mysql, "SELECT username,passwd FROM user")){
         LOG_ERROR("SELECT error:%s\n", mysql_error(mysql));
     }
-
     //从表中检索完整的结果集
     MYSQL_RES *result = mysql_store_result(mysql);
-
     //返回结果集中的列数
     int num_fields = mysql_num_fields(result);
-
     //返回所有字段结构的数组
     MYSQL_FIELD *fields = mysql_fetch_fields(result);
-
     //从结果集中获取下一行，将对应的用户名和密码，存入map中
     while (MYSQL_ROW row = mysql_fetch_row(result)){
         string temp1(row[0]);
@@ -58,12 +53,10 @@ int setnonblocking(int fd){
 void addfd(int epollfd, int fd, bool one_shot, int TRIGMode){
     epoll_event event;
     event.data.fd = fd;
-
     if (1 == TRIGMode)
         event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
     else
         event.events = EPOLLIN | EPOLLRDHUP;
-
     if (one_shot)
         event.events |= EPOLLONESHOT;
     epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
@@ -80,16 +73,14 @@ void removefd(int epollfd, int fd){
 void modfd(int epollfd, int fd, int ev, int TRIGMode){
     epoll_event event;
     event.data.fd = fd;
-
     if (1 == TRIGMode)
         event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
     else
         event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
-
     epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
 
-//关闭连接，关闭一个连接，客户总量减一
+//关闭一个连接
 void http_conn::close_conn(bool real_close){
     if (real_close && (m_sockfd != -1)){
         LOG_INFO("close %d\n", m_sockfd);
@@ -104,11 +95,8 @@ void http_conn::init(int sockfd, const sockaddr_in &addr, char *root, int TRIGMo
                      int close_log, string user, string passwd, string sqlname){
     m_sockfd = sockfd;
     m_address = addr;
-
     addfd(m_epollfd, sockfd, true, m_TRIGMode);
     m_user_count++;
-
-    //当浏览器出现连接重置时，可能是网站根目录出错或http响应格式出错或者访问的文件中内容完全为空
     doc_root = root;
     m_TRIGMode = TRIGMode;
     m_close_log = close_log;
@@ -116,12 +104,10 @@ void http_conn::init(int sockfd, const sockaddr_in &addr, char *root, int TRIGMo
     strcpy(sql_user, user.c_str());
     strcpy(sql_passwd, passwd.c_str());
     strcpy(sql_name, sqlname.c_str());
-
     init();
 }
 
 //初始化新接受的连接
-//check_state默认为分析请求行状态
 void http_conn::init(){
     mysql = NULL;
     bytes_to_send = 0;
@@ -148,7 +134,6 @@ void http_conn::init(){
 }
 
 //从状态机，用于分析出一行内容
-//返回值为行的读取状态，有LINE_OK,LINE_BAD,LINE_OPEN
 http_conn::LINE_STATUS http_conn::parse_line(){
     char temp;
     for (; m_checked_idx < m_read_idx; ++m_checked_idx){
@@ -182,8 +167,6 @@ bool http_conn::read_once(){
         return false;
     }
     int bytes_read = 0;
-
-    //LT读取数据
     if (0 == m_TRIGMode){
         bytes_read = recv(m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0);
         m_read_idx += bytes_read;
@@ -191,11 +174,8 @@ bool http_conn::read_once(){
         if (bytes_read <= 0){
             return false;
         }
-
         return true;
-    }
-    //ET读数据
-    else{
+    }else{
         while (true){
             bytes_read = recv(m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0);
             if (bytes_read == -1){
@@ -333,22 +313,16 @@ http_conn::HTTP_CODE http_conn::process_read(){
 http_conn::HTTP_CODE http_conn::do_request(){
     strcpy(m_real_file, doc_root);
     int len = strlen(doc_root);
-    //printf("m_url:%s\n", m_url);
     const char *p = strrchr(m_url, '/');
 
-    //处理cgi
     if (cgi == 1 && (*(p + 1) == '2' || *(p + 1) == '3')){
-
         //根据标志判断是登录检测还是注册检测
         char flag = m_url[1];
-
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
         strcpy(m_url_real, "/");
         strcat(m_url_real, m_url + 2);
         strncpy(m_real_file + len, m_url_real, FILENAME_LEN - len - 1);
         free(m_url_real);
-
-        //将用户名和密码提取出来
         //user=123&passwd=123
         char name[100], password[100];
         int i;
@@ -377,7 +351,6 @@ http_conn::HTTP_CODE http_conn::do_request(){
                 int res = mysql_query(mysql, sql_insert);
                 users.insert(pair<string, string>(name, password));
                 m_lock.unlock();
-
                 if (!res)
                     strcpy(m_url, "/log.html");
                 else
@@ -405,9 +378,6 @@ http_conn::HTTP_CODE http_conn::do_request(){
         char record_major[50];
         char record_cellphone[50];
         char record_email[50];
-
-        printf("m_string: %s\n",m_string);
-        
         int i;
         for (i = 3; m_string[i] != '&'; ++i)
             record_id[i - 3] = m_string[i];
@@ -447,16 +417,6 @@ http_conn::HTTP_CODE http_conn::do_request(){
         for (i = i + 7; m_string[i] != '\0'; ++i, ++j)
             record_email[j] = m_string[i];
         record_email[j] = '\0';
-
-        printf("id: %s\n",record_id);
-        printf("name: %s\n",record_name);
-        printf("gender: %s\n",record_gender);
-        printf("age: %s\n",record_age);
-        printf("school: %s\n",record_school);
-        printf("major: %s\n",record_major);
-        printf("cellphone: %s\n",record_cellphone);
-        printf("email: %s\n",record_email);
-
         char *sql_insert = (char *)malloc(sizeof(char) * 2000);
 
         strcpy(sql_insert, "INSERT INTO student(id, name, gender, age, school, major, cellphone, email) VALUES(");
@@ -481,11 +441,10 @@ http_conn::HTTP_CODE http_conn::do_request(){
         m_lock.lock();
         int res = mysql_query(mysql, sql_insert);
         m_lock.unlock();
-
         if (!res)
-            strcpy(m_url, "/log.html");
+            strcpy(m_url, "/writesuccess.html");
         else
-            strcpy(m_url, "/registerError.html");
+            strcpy(m_url, "/writeError.html");
     }
 
     if (*(p + 1) == '0'){
@@ -504,7 +463,6 @@ http_conn::HTTP_CODE http_conn::do_request(){
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
         strcpy(m_url_real, "/picture.html");
         strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-        printf("m_url_real: %s\n",m_url_real);
         free(m_url_real);
     }else if (*(p + 1) == '6'){
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
@@ -515,7 +473,7 @@ http_conn::HTTP_CODE http_conn::do_request(){
     }else if (*(p + 1) == '7')
     {
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/fans.html");
+        strcpy(m_url_real, "/tips.html");
         strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
 
         free(m_url_real);
@@ -552,16 +510,13 @@ void http_conn::unmap(){
 
 bool http_conn::write(){
     int temp = 0;
-
     if (bytes_to_send == 0){
         modfd(m_epollfd, m_sockfd, EPOLLIN, m_TRIGMode);
         init();
         return true;
     }
-
     while (1){
         temp = writev(m_sockfd, m_iv, m_iv_count);
-
         if (temp < 0){
             if (errno == EAGAIN){
                 modfd(m_epollfd, m_sockfd, EPOLLOUT, m_TRIGMode);
@@ -570,7 +525,6 @@ bool http_conn::write(){
             unmap();
             return false;
         }
-
         bytes_have_send += temp;
         bytes_to_send -= temp;
         if (bytes_have_send >= m_iv[0].iov_len){
@@ -581,11 +535,9 @@ bool http_conn::write(){
             m_iv[0].iov_base = m_write_buf + bytes_have_send;
             m_iv[0].iov_len = m_iv[0].iov_len - bytes_have_send;
         }
-
         if (bytes_to_send <= 0){
             unmap();
             modfd(m_epollfd, m_sockfd, EPOLLIN, m_TRIGMode);
-
             if (m_linger){
                 init();
                 return true;
@@ -608,9 +560,7 @@ bool http_conn::add_response(const char *format, ...){
     }
     m_write_idx += len;
     va_end(arg_list);
-
     LOG_INFO("request:%s", m_write_buf);
-
     return true;
 }
 
