@@ -9,27 +9,27 @@
 ## 执行
 > ./server
 ## 数据库连接
-> sudo apt install mysql-server
-> sudo mysql
-> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
-第一次用创建用户表
-> create table user(
->     username char(50) NULL,
->     passwd char(50) NULL
-> );
+> sudo apt install mysql-server    
+> sudo mysql    
+> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';    
+第一次用创建用户表    
+> create table user(    
+>     username char(50) NULL,   
+>     passwd char(50) NULL   
+> );   
+    
+> create table student(    
+>     id char(50) NULL,    
+>     name char(50) NULL,    
+>     gender char(50) NULL,    
+>     age char(50) NULL,    
+>     school char(50) NULL,   
+>     major char(50) NULL,   
+>     cellphone char(50) NULL,   
+>     email char(50) NULL   
+> );   
 > 
-> create table student(
->     id char(50) NULL,
->     name char(50) NULL,
->     gender char(50) NULL,
->     age char(50) NULL,
->     school char(50) NULL,
->     major char(50) NULL,
->     cellphone char(50) NULL,
->     email char(50) NULL
-> );
-> 
-> INSERT INTO user(username, passwd) VALUES('name', 'passwd');
+> INSERT INTO user(username, passwd) VALUES('name', 'passwd');   
 
 ## webbench压测
 ### 1.1 安装依赖 exuberant-ctags  
