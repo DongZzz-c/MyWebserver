@@ -12,12 +12,13 @@
 	sudo apt install mysql-server    
 	sudo mysql    
 	ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';    
-第一次用创建用户表
+第一次用创建用户表  
+
 	create table user(    
 	username char(50) NULL,   
 	passwd char(50) NULL   
 	);   
-    
+
 	create table student(    
 	id char(50) NULL,    
 	name char(50) NULL,    
