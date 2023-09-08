@@ -3,7 +3,7 @@
 int main(int argc, char *argv[])
 {
     string user = "root";
-    string passwd = "123456";
+    string passwd = "789632145";
     string databasename = "dongdb";
 
     Config config;
